@@ -24,7 +24,7 @@ bytes = "1.5.0"
 futures = "0.3.30"
 miltr-common = { version = "0.1.0", path = "../common" }
 miltr-utils = { version = "0.1.0", path = "../utils" }
-thiserror = "1.0.57"
+thiserror = "2.0.11"
 tracing = { version = "0.1", default-features = false, features = ["std", "attributes"], optional = true }
 
 [lints.rust]
