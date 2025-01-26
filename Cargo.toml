@@ -17,3 +17,5 @@ miltr-server = { path = "server" }
 
 [dependencies]
 async-trait = "0.1.77"
+miette = { version = "7.4.0", features = ["fancy"] }
+nix = { version = "0.29.0", features = ["signal"] }
