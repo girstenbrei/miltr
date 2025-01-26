@@ -65,5 +65,5 @@ a python package containing a complete milter implementation. Without this resou
 at "how they did it" this implementation would not have happened.
 
 ## Anh Vu
-Another big thank you goes to Anh Vu (<vunpa1711@gmail.com>), working student at Retarus, who wrote a big
+Another big thank you goes to Anh Vu (<vunpa1711@gmail.com>), working student at the time at Retarus, who wrote a big
 part of the integration tests and brought valuable feedback for implementation improvements. Thank you!
