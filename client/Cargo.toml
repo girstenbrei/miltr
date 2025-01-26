@@ -1,6 +1,6 @@
 [package]
 name = "miltr-client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 readme = "Readme.md"
 license = "MIT"
@@ -23,8 +23,8 @@ thiserror = "2.0.11"
 asynchronous-codec = "0.7.0"
 bytes = "1.5.0"
 paste = "1.0.14"
-miltr-common = { version = "0.1.0", path = "../common" }
-miltr-utils = { version = "0.1.0", path = "../utils" }
+miltr-common = { version = "0.1.1", path = "../common" }
+miltr-utils = { version = "0.1.1", path = "../utils" }
 tracing = { version = "0.1", default-features = false, features = ["std", "attributes"], optional = true }
 
 [lints.rust]
