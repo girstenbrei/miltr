@@ -47,14 +47,17 @@ impl<'m, M: Milter> Server<'m, M> {
     /// `quit`. See [this comment][c] as a source in the postfix docs
     ///
     /// AFAIK, originally there where three use cases individual methods:
-    /// 1. Abort \
+    /// 1. Abort
+    ///
     ///   The current smtp client that is connected to the milter client
     ///   has finished. Next mail arrives.
-    /// 2. Quit \
+    /// 2. Quit
+    ///
     ///   The current smtp client that was connected to the milter client
     ///   has quit it's connection and the milter client will now quit this
     ///   connection.
-    /// 3. Quit NC \
+    /// 3. Quit NC
+    ///
     ///   The current smtp client that was connected to the milter client
     ///   has quit it's connection but the milter client would like to re-use
     ///   this connection for someone else.

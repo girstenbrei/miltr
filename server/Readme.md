@@ -61,7 +61,7 @@ incoming macros. This is currently stubbed out.
 ### Design Decision
 This tries to give small 'justifications' about implementation details.
 
-#### BytesMut and Ownership
+#### `BytesMut` and Ownership
 It was relatively easy to 'parse' this protocol using `BytesMut::(split_to|split_off)`.
 This allows all parsed commands to just own their data without any borrowing complexity
 as well as having parsing logic inside the parse-step (instead of in the access
@@ -81,7 +81,7 @@ Rejecting in this case will error out of the milter codec. This behavior is
 maybe not ideal, but ATM the best I could come up with.
 
 Additionally, this crate suffers from overflow panics. If you pass a parameter
-(e.g. a Header value) with length usize::MAX on a 32bit system (-~> 4Gi of size), the codec
+(e.g. a Header value) with length `usize::MAX` on a 32bit system (-~> 4Gi of size), the codec
 will try to get an item length: `name.len() + value.len()`. This will overflow
 and therefore panic in debug mode, wrap in release mode, breaking the connection.
 

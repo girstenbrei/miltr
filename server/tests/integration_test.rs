@@ -1,3 +1,4 @@
+//! A module containing different milters to test implementation.
 use std::{
     fs,
     path::{Path, PathBuf},
