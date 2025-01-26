@@ -17,12 +17,12 @@ _fuzzing = []
 tracing = ["dep:strum"]
 
 [dependencies]
-allocation-counter = { version = "0", optional = true }
+allocation-counter = { version = "0.8.1", optional = true }
 bitflags = "2.4.2"
 enum_dispatch = "0.3.12"
-itertools = "0.12.1"
+itertools = "0.14.0"
 num_enum = "0.7.2"
-thiserror = "1.0.57"
+thiserror = "2.0.11"
 asynchronous-codec = "0.7.0"
 bytes = "1.5.0"
 bytecount = "0.6.7"
@@ -33,7 +33,7 @@ strum = { version = "0.26", features = ["derive"], optional = true }
 assert_matches = "1.5.0"
 pretty_assertions = "1.4.0"
 tokio = { version = "1.36.0", features = ["full"] }
-rstest = "0.18.2"
+rstest = "0.24.0"
 
 [lints.rust]
 unsafe_code = "forbid"
