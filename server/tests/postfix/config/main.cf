@@ -5,7 +5,7 @@
 # is /etc/mailname.
 #myorigin = /etc/mailname
 
-smtpd_banner = $myhostname ESMTP Retarus Managed E-Mail Services (RMX3)
+smtpd_banner = $myhostname ESMTP Managed E-Mail Services (RMX3)
 biff = no
 
 # Uncomment the next line to generate "delayed mail" warnings
@@ -64,7 +64,7 @@ mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.29.0.0/16
 #recipient_delimiter = +
 inet_interfaces =  all
 ##########################################
-# retarus defaults:
+# defaults:
 ##########################################
 smtp_address_preference = any
 
