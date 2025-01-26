@@ -488,7 +488,7 @@ dependencies = [
 
 [[package]]
 name = "miltr"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "escargot",
@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "miltr-client"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "asynchronous-codec",
  "bitflags 2.4.2",
@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "miltr-common"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "allocation-counter",
  "assert_matches",
@@ -541,7 +541,7 @@ dependencies = [
 
 [[package]]
 name = "miltr-server"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-dropper",
  "async-trait",
@@ -562,7 +562,7 @@ dependencies = [
 
 [[package]]
 name = "miltr-utils"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytes",
 ]
