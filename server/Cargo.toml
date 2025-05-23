@@ -1,6 +1,6 @@
 [package]
 name = "miltr-server"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 readme = "Readme.md"
 license = "MIT"
@@ -22,7 +22,7 @@ async-trait = "0.1.77"
 asynchronous-codec = "0.7.0"
 bytes = "1.5.0"
 futures = "0.3.30"
-miltr-common = { version = "0.1.1", path = "../common" }
+miltr-common = { version = "0.1.2", path = "../common" }
 miltr-utils = { version = "0.1.1", path = "../utils" }
 thiserror = "2.0.11"
 tracing = { version = "0.1", default-features = false, features = ["std", "attributes"], optional = true }
