@@ -64,7 +64,7 @@ impl MacroStages {
             for symbol in stage {
                 //                      The space separator
                 // The length of the macro string   |
-                accumulator += symbol.bytes().len() + 1;
+                accumulator += symbol.len() + 1;
             }
 
             // At the end, one space separator has been added to the accumulator

@@ -148,7 +148,7 @@ mod test {
             }
             (Ok(expected), Ok(parsed)) => assert_eq!(expected, parsed),
             (expected, parsed) => panic!("Did not get expected:\n{expected:?}\n vs \n{parsed:?}"),
-        };
+        }
     }
     #[cfg(feature = "count-allocations")]
     #[test]

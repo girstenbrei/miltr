@@ -272,7 +272,7 @@ impl<RW: AsyncRead + AsyncWrite + Unpin> Connection<RW> {
                 CommandType::ModificationAction(action) => {
                     modification_response_builder.push(action);
                 }
-            };
+            }
         }
     }
 

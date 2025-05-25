@@ -1,6 +1,8 @@
 services:
   test:
-    command: cargo test --all
+    command: cargo tarpaulin --all --all-features --workspace --timeout 120 --out xml
+    security_opt:
+      - seccomp:unconfined
     build:
       context: ./
       dockerfile: Dockerfile

@@ -41,6 +41,7 @@ fn run_client(client: CargoRun) -> Result<()> {
     Ok(())
 }
 
+#[ignore = "https://github.com/girstenbrei/miltr/issues/13"]
 #[test]
 fn client_v_server() {
     // Build

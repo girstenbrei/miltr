@@ -153,7 +153,6 @@ impl<'m, M: Milter> Server<'m, M> {
                         .macro_(macro_)
                         .await
                         .map_err(Error::from_app_error)?;
-                    continue;
                 }
 
                 // Control flow cases
@@ -181,9 +180,8 @@ impl<'m, M: Milter> Server<'m, M> {
                 // Quit and re-use this connection
                 ClientCommand::QuitNc(_v) => {
                     self.milter.quit_nc().await.map_err(Error::from_app_error)?;
-                    continue;
                 }
-            };
+            }
         }
         Ok(())
     }
