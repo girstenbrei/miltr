@@ -1,13 +1,13 @@
 
-FROM clux/muslrust:stable AS chef
-RUN mkdir /workspace
+FROM rust:1.87 AS chef
 WORKDIR /workspace
 
+# Install additional tooling
 RUN cargo install \
     cargo-chef \
     cargo-tarpaulin
 
-# Install dependencies
+# Install system dependencies
 RUN apt-get update \
  && apt-get install -y postfix swaks
 
