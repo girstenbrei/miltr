@@ -4,7 +4,8 @@ RUN mkdir /workspace
 WORKDIR /workspace
 
 RUN cargo install \
-    cargo-chef
+    cargo-chef \
+    cargo-tarpaulin
 
 # Install dependencies
 RUN apt-get update \
