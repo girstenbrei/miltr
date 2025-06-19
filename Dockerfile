@@ -3,7 +3,8 @@ FROM rust:1.87 AS chef
 WORKDIR /workspace
 
 # Install additional tooling
-RUN cargo install \
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+RUN cargo binstall --target x86_64-unknown-linux-musl \
     cargo-chef \
     cargo-tarpaulin
 
