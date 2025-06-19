@@ -6,11 +6,12 @@ WORKDIR /workspace
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall --target x86_64-unknown-linux-musl \
     cargo-chef \
-    cargo-tarpaulin
+    cargo-tarpaulin \
+    cargo-nextest
 
 # Install system dependencies
 RUN apt-get update \
- && apt-get install -y postfix swaks
+ && apt-get install -y postfix swaks vim
 
 # Setup postfix
 COPY ./server/tests/postfix/config /etc/postfix
