@@ -94,7 +94,7 @@ impl<M: Milter + 'static> TestCase<M> {
         });
 
         // The smtp_sink setup
-        let smtp_sink = SmtpSink::setup(path)
+        let smtp_sink = SmtpSink::setup("setup")
             .await
             .wrap_err("Failed setting up smtpsink")?;
 
