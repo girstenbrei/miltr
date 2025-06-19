@@ -3,7 +3,7 @@ use std::path::Path;
 use miette::{Context, IntoDiagnostic, Result};
 use tokio::process::{Child, Command};
 
-use super::remove_dir_contents;
+use crate::utils::remove_dir_contents;
 
 #[derive(Debug)]
 pub struct SmtpSink {

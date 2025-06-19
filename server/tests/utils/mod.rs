@@ -1,5 +1,8 @@
+mod portguard;
 pub mod smtpsink;
 pub mod testcase;
+
+pub use portguard::PortGuard;
 
 use std::{
     path::{Path, PathBuf},
