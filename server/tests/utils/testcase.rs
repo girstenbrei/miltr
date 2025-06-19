@@ -1,151 +1,141 @@
-use std::{env, path::Path, process::Stdio};
-
-use async_dropper::{AsyncDrop, AsyncDropper};
-use async_trait::async_trait;
-use miette::{miette, Context, ErrReport, IntoDiagnostic, Result};
-use miltr_server::{Milter, Server};
-use once_cell::sync::Lazy;
-use tokio::{
-    io::AsyncWriteExt,
-    net::TcpListener,
-    process::Command,
-    runtime::{Handle, RuntimeFlavor},
-    sync::{Mutex, MutexGuard},
-    task::JoinHandle,
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    time::Duration,
 };
-use tokio_retry::{
-    strategy::{jitter, FixedInterval},
-    Retry,
+
+use lettre::{
+    message::header::ContentType, transport::smtp::response::Response, AsyncSmtpTransport,
+    AsyncTransport, Message, Tokio1Executor,
 };
-use tokio_util::compat::TokioAsyncReadCompatExt;
+use miette::{miette, Context, IntoDiagnostic, Result};
+use miltr_server::Milter;
+use tokio::{fs, net::TcpListener, time::sleep};
 
-use super::smtpsink::SmtpSink;
+use crate::utils::{run_milter, PostfixInstance, SmtpSink};
 
-static TEST_SERIALIZER: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+/// Naive limit on sending mails
+///
+/// In earlier times, the tests needed retries. Turns out, this was because the
+/// milter did not run in parallel but in sequence in the async machinery. Now
+/// it seems to be fixed, I leave this here if we need it in the future again.
+const MAX_SEND_RETRIES: u64 = 1;
 
-#[derive(Debug)]
-pub struct TestCase<M: Milter> {
-    inner: Option<InnerTestCase<M>>,
-}
+pub struct RunningState;
+pub struct StoppedState;
 
-impl<M: Milter> Default for TestCase<M> {
-    fn default() -> Self {
-        Self { inner: None }
-    }
-}
-
-#[derive(Debug)]
-struct InnerTestCase<M: Milter> {
-    join_handle: JoinHandle<M>,
+pub struct TestCase<S> {
+    postfix: PostfixInstance,
     smtp_sink: SmtpSink,
-    _guard: MutexGuard<'static, ()>,
+    state: PhantomData<S>,
 }
 
-impl<M: Milter + 'static> TestCase<M> {
-    pub async fn setup(mut milter: M, path: &Path) -> Result<AsyncDropper<Self>, ErrReport> {
-        // Failsafe to report a nice error to the user
-        match Handle::try_current().into_diagnostic().wrap_err("Failed checking current runtime")?.runtime_flavor() {
-            RuntimeFlavor::MultiThread => Ok(()),
-            _ => Err(
-                miette!(
-                    help="For these tests to work, we need the '#[tokio::test(flavor = \"multi_thread\")]' attribute",
-                    "Unsupported tokio runtime"
-                ))
-        }?;
-
-        // Lock the guard to be the only test executing
-        let guard = TEST_SERIALIZER.lock().await;
-
-        // Ensure postfix is running
-        let postfix_status = Command::new("postfix")
-            .arg("status")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
+impl TestCase<RunningState> {
+    pub async fn setup<M, E>(name: &str, milter: M) -> Result<Self>
+    where
+        E: Debug + Display + 'static,
+        M: Milter<Error = E> + 'static + Clone,
+    {
+        // Setup and run new milter
+        let listener = TcpListener::bind("0.0.0.0:0")
             .await
-            .into_diagnostic()
-            .wrap_err("Failed spawning 'postfix status'")?;
-        if !postfix_status.success() {
-            Command::new("postfix")
-                .arg("start")
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .status()
-                .await
-                .into_diagnostic()
-                .wrap_err("Failed running 'postfix start'")?;
-        }
+            .expect("Failed to bind to addr");
+        let local_addr = listener.local_addr().expect("Failed to read local addr");
+        run_milter(listener, milter).await;
 
-        // The milter setup
-        let listener = Self::wait_for_socket()
+        let smtp_sink = SmtpSink::setup(name)
             .await
-            .wrap_err("Failed starting tcp listener")?;
-        let join_handle = tokio::spawn(async move {
-            let (socket, _) = listener.accept().await.expect("Fail to accept connection");
-            let mut socket = socket.compat();
-
-            let mut server = Server::default_postfix(&mut milter);
-            let _res = server.handle_connection(&mut socket).await;
-
-            let mut socket = socket.into_inner();
-            socket.shutdown().await.expect("Shutdown call failed");
-
-            milter
-        });
-
-        // The smtp_sink setup
-        let smtp_sink = SmtpSink::setup("setup")
+            .wrap_err("Failed smtp sink setup")?;
+        let postfix = PostfixInstance::setup(name, local_addr, smtp_sink.port)
             .await
-            .wrap_err("Failed setting up smtpsink")?;
+            .wrap_err("Failed setting up postfix")?;
 
-        let inner = InnerTestCase {
-            join_handle,
+        Ok(Self {
+            postfix,
             smtp_sink,
-            _guard: guard,
-        };
-
-        Ok(AsyncDropper::new(Self { inner: Some(inner) }))
-    }
-
-    async fn wait_for_socket() -> Result<TcpListener> {
-        let addr = env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
-        let addr_borrow = addr.as_str();
-
-        let retry_strategy = FixedInterval::from_millis(500).map(jitter).take(10);
-
-        let listener = Retry::spawn(retry_strategy, || async move {
-            TcpListener::bind(addr_borrow)
-                .await
-                .into_diagnostic()
-                .wrap_err("Fail to bind tcp listener")
+            state: PhantomData,
         })
-        .await?;
-
-        Ok(listener)
     }
 
-    pub async fn as_milter(&mut self) -> Result<M> {
-        let Some(ref mut inner) = self.inner else {
-            return Err(miette!("This TestCase did not contain an inner"));
-        };
+    pub async fn send_mail(&self) -> Result<Response, lettre::transport::smtp::Error> {
+        // Send a mail through postfix
+        let email = Message::builder()
+            .from(
+                "NoBody <nobody@domain.tld>"
+                    .parse()
+                    .expect("Failed mail addr parsing"),
+            )
+            .to("Hei <hei@domain.tld>"
+                .parse()
+                .expect("Failed mail addr parsing"))
+            .subject("Happy new year")
+            .header(ContentType::TEXT_PLAIN)
+            .body(String::from("Be happy!"))
+            .expect("Failed mail building");
 
-        inner.smtp_sink.kill().await;
+        // Open a remote connection to the SMTP relay server
+        println!("Sending mail to port {}", self.postfix.port());
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous("localhost")
+            .port(self.postfix.port())
+            .build();
 
-        let join_handle = &mut inner.join_handle;
-        let milter = join_handle
-            .await
-            .into_diagnostic()
-            .wrap_err("Failed awaiting test case join handle")?;
+        // We retry the send here as there is enough networking involved for this
+        // send to fail spuriously. Either postfix is not ready yet or the backend
+        // connection between postfix and the milter does not work yet.
+        let mut retry_counter: u64 = 0;
+        loop {
+            // Send the email
+            println!("\tAttemtp '{}' sending mail", retry_counter + 1);
+            match mailer.send(email.clone()).await {
+                Ok(v) => return Ok(v),
+                Err(e) => {
+                    if retry_counter >= MAX_SEND_RETRIES {
+                        return Err(e);
+                    }
+                    sleep(Duration::from_millis(retry_counter * 500)).await;
+                    retry_counter += 1;
+                }
+            }
+        }
+    }
 
-        Ok(milter)
+    pub async fn stop(mut self) -> Result<TestCase<StoppedState>> {
+        self.postfix.stop().await?;
+        self.smtp_sink.kill().await?;
+
+        Ok(TestCase {
+            postfix: self.postfix,
+            smtp_sink: self.smtp_sink,
+            state: PhantomData,
+        })
     }
 }
 
-#[async_trait]
-impl<M: Milter + 'static> AsyncDrop for TestCase<M> {
-    async fn async_drop(&mut self) {
-        self.as_milter()
+impl TestCase<StoppedState> {
+    pub async fn log_file_content(&self) -> Result<String> {
+        self.postfix.log_file_content().await
+    }
+
+    pub async fn validate_mail(&self, needle: &str) -> Result<String> {
+        let changed_file = self
+            .smtp_sink
+            .wait_for_file()
             .await
-            .expect("Failed awaiting halt of inner milter");
+            .wrap_err("Failed watching files")?;
+
+        let content = fs::read_to_string(changed_file.as_path())
+            .await
+            .into_diagnostic()
+            .wrap_err("Could not read mail output file")?;
+
+        if content.contains(needle) {
+            Ok(content)
+        } else {
+            Err(miette!(
+                "Email is not correctly modified by Milter, needle '{}' not found in '{}'",
+                needle,
+                content
+            ))
+        }
     }
 }

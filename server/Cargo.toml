@@ -7,8 +7,8 @@ license = "MIT"
 description = "A miltr server library in pure rust"
 
 # MSRV is considered exempt from SemVer upgrades
-# Current limitation is: "async-dropper-simple"
-rust-version = "1.71.1"
+# Current limitation is: "std::os::unix::fs::chown"
+rust-version = "1.73.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]

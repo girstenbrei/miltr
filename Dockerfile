@@ -15,8 +15,8 @@ RUN apt-get update \
 
 # Setup postfix
 COPY ./server/tests/postfix/config /etc/postfix
-RUN echo "localhost" > /etc/mailname
-RUN cd /etc/postfix && postmap /etc/postfix/transport
+RUN echo "localhost" > /etc/mailname \
+ && chmod 644 /etc/postfix/*
 
 
 FROM chef AS planner

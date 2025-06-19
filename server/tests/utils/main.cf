@@ -1,0 +1,95 @@
+smtpd_banner = $myhostname ESMTP Managed E-Mail Services
+biff = no
+
+smtp_mx_address_limit = 15
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+append_at_myorigin = no
+swap_bangpath = no
+
+maximal_queue_lifetime = 2h
+bounce_queue_lifetime = 2h
+
+maximal_backoff_time = 5m
+minimal_backoff_time = 1m
+
+readme_directory = no
+enable_long_queue_ids = yes
+
+# TLS parameters
+smtp_use_tls=no
+smtpd_use_tls=no
+smtpd_tls_received_header=no
+# Opportunistic TLS = may #### Enforce = encrypt 
+smtp_tls_security_level=may
+# Opportunistic TLS = may #### Enforce = encrypt 
+smtpd_tls_security_level=may
+
+myhostname = localhost
+myorigin = /etc/mailname
+mydestination = localhost
+
+
+inet_protocols = ipv4
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.29.0.0/16
+#recipient_delimiter = +
+inet_interfaces =  all
+smtp_address_preference = any
+
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+strict_rfc821_envelopes = no
+resolve_numeric_domain = no
+smtpd_recipient_limit = 300
+smtpd_client_restrictions = 
+smtpd_helo_required = no
+smtpd_helo_restrictions =
+
+smtpd_recipient_restrictions =        permit_mynetworks
+        #check_client_access hash:/etc/postfix/access
+        #permit_sasl_authenticated
+        reject_unauth_destination
+
+qmqpd_client_port_logging = yes
+smtp_tls_loglevel = 1
+smtpd_client_port_logging = yes
+smtpd_tls_loglevel = 1
+
+message_size_limit = 256000000
+mailbox_size_limit = 0
+
+smtpd_delay_open_until_valid_rcpt = no
+
+allow_min_user = yes
+allow_percent_hack = no
+
+transport_maps = hash:/etc/postfix/transport
+
+#How often the queue manager scans the queue for deferred mail.:
+queue_run_delay = 1m
+default_process_limit = 2000
+smtpd_client_connection_count_limit = 1000
+smtp_destination_concurrency_limit = 100
+default_destination_concurrency_limit = 80
+
+# milters:
+smtpd_milters = inet:127.0.0.1:8080
+milter_command_timeout = 5s
+milter_connect_timeout = 5s
+milter_content_timeout = 5s
+# you may need to configure the Milter protocol version that Postfix should use. 
+# The default version is 6 (before Postfix 2.6 the default version is 2)
+milter_protocol = 6
+
+# milter_connect_macros = j {daemon_name} {daemon_addr} v {client_addr} {client_name}
+# milter_mail_macros = i {auth_type} {auth_authen} {auth_author} {mail_addr} {mail_host} {mail_mailer} {tls_version} {cipher} {cipher_bits}
+# mail splitting erst bei 250 rcpts: (50 = default)
+default_destination_recipient_limit = 250
+
+smtpd_relay_restrictions =  permit_mynetworks reject_unauth_destination 
+
+maillog_file = /var/log/mail.log
+
+relay_domains = test.local
+compatibility_level = 3.6
