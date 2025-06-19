@@ -28,7 +28,6 @@ thiserror = "2.0.11"
 tracing = { version = "0.1", default-features = false, features = ["std", "attributes"], optional = true }
 
 [dev-dependencies]
-async-dropper = { version = "0.3.1", features = ["tokio", "simple"] }
 async-fd-lock = "0.2.0"
 async-trait = "0.1.77"
 lettre = { version = "0.11.7", features = ["tokio1", "tokio1-native-tls"] }
