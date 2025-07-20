@@ -1,3 +1,4 @@
+//! Test utils to run a single action during a milter session.
 use std::{
     fmt::{Debug, Display},
     sync::{
@@ -16,6 +17,7 @@ use miltr_server::{Milter, Server};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
+/// A milter performing a single action on `end_of_body`.
 #[derive(Clone)]
 pub struct ActionMilter(Arc<ActionMilterInner>);
 

@@ -28,10 +28,7 @@ pub struct PostfixInstance {
 impl PostfixInstance {
     pub async fn setup(name: &str, milter_addr: SocketAddr) -> Result<PostfixInstance> {
         let name = format!("postfix-{name}");
-        let port = PortGuard::lock()
-            .await
-            .wrap_err("Failed locking postguard")?
-            .port()
+        let port = PortGuard::port()
             .await
             .wrap_err("Failed to retrieve smtp port")?;
         println!("Setup '{name}' on :{port}");

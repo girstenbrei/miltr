@@ -10,12 +10,18 @@ use tokio::{
 const LOCK_PATH: &str = "/var/run/postguard.lock";
 const FIRST_PORT: u16 = 10025;
 
+/// Multi-Process safe port number generator
+///
+/// Running multiple server instances that need non-colliding port numbers
+/// to connect to can request a single port via `PortGuard::port()`.
+///
+/// This is just a disk-based advisory file lock storing the last port returned.
 pub struct PortGuard {
     guard: RwLockWriteGuard<File>,
 }
 
 impl PortGuard {
-    pub async fn lock() -> Result<Self> {
+    async fn lock() -> Result<Self> {
         let guard = File::options()
             .read(true)
             .write(true)
@@ -34,9 +40,13 @@ impl PortGuard {
         Ok(Self { guard })
     }
 
-    pub async fn port(&mut self) -> Result<u16> {
+    pub async fn port() -> Result<u16> {
+        let mut this = PortGuard::lock()
+            .await
+            .wrap_err("Failed locking postguard")?;
+
         let mut buf = String::new();
-        self.guard
+        this.guard
             .read_to_string(&mut buf)
             .await
             .into_diagnostic()
@@ -51,13 +61,13 @@ impl PortGuard {
                 .wrap_err("Failed to parse lockfile content to port number")?
         };
 
-        self.guard
+        this.guard
             .seek(SeekFrom::Start(0))
             .await
             .into_diagnostic()
             .wrap_err("Failed to rewind lockfile")?;
 
-        self.guard
+        this.guard
             .write_all(format!("{}\n", port + 1).as_bytes())
             .await
             .into_diagnostic()
@@ -69,17 +79,12 @@ impl PortGuard {
 
 #[tokio::test]
 async fn get_ports() {
-    let mut guard_1 = PortGuard::lock().await.expect("Failed locking first guard");
-    let port_1 = guard_1
-        .port()
+    let port_1 = PortGuard::port()
         .await
         .expect("Failed retrieving guard_1 port");
     assert!(port_1 >= FIRST_PORT);
-    drop(guard_1);
 
-    let mut guard_2 = PortGuard::lock().await.expect("Failed locking first guard");
-    let port_2 = guard_2
-        .port()
+    let port_2 = PortGuard::port()
         .await
         .expect("Failed retrieving guard_1 port");
     assert!(port_2 > port_1);
