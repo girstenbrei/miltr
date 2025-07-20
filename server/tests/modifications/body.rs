@@ -31,11 +31,11 @@ async fn test_replace_body() {
         .await
         .expect("Failed setting up test case");
 
-    testcase.send_mail().await.expect("Failed sending mail");
+    let response = testcase.send_mail().await.expect("Failed sending mail");
     let testcase = testcase.stop().await.expect("Failed to shut down postfix");
 
     testcase
-        .validate_mail("Replace Body")
+        .validate_mail("Replace Body", &response)
         .await
         .expect("Received mail did not contain replaced body");
 }

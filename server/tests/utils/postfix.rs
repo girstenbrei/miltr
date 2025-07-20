@@ -5,12 +5,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use lettre::transport::smtp::response::Response;
 use miette::{miette, Context, IntoDiagnostic, Result};
 use tokio::{
     fs::{self, create_dir_all, remove_dir_all, write, File},
     io::AsyncWriteExt,
     process::Command,
 };
+use walkdir::WalkDir;
 
 use crate::utils::PortGuard;
 
@@ -24,11 +26,7 @@ pub struct PostfixInstance {
 }
 
 impl PostfixInstance {
-    pub async fn setup(
-        name: &str,
-        milter_addr: SocketAddr,
-        smtp_sink_port: u16,
-    ) -> Result<PostfixInstance> {
+    pub async fn setup(name: &str, milter_addr: SocketAddr) -> Result<PostfixInstance> {
         let name = format!("postfix-{name}");
         let port = PortGuard::lock()
             .await
@@ -88,7 +86,7 @@ impl PostfixInstance {
                 .wrap_err("Failed removing data dir")?;
         }
 
-        instance.create_dirs_and_config(smtp_sink_port).await?;
+        instance.create_dirs_and_config().await?;
 
         status(
             "postfix",
@@ -115,7 +113,7 @@ impl PostfixInstance {
         self.port
     }
 
-    async fn create_dirs_and_config(&mut self, smtp_sink_port: u16) -> Result<()> {
+    async fn create_dirs_and_config(&mut self) -> Result<()> {
         create_and_own(&self.config_dir, 0, 0)
             .await
             .wrap_err("Failed config dir setup")?;
@@ -165,13 +163,10 @@ impl PostfixInstance {
         .wrap_err("Failed updating instance master.cf")?;
 
         // Add transport output to smtpsink all mails
-        write(
-            self.config_dir.join("transport"),
-            format!("* smtp:127.0.0.1:{smtp_sink_port}\n"),
-        )
-        .await
-        .into_diagnostic()
-        .wrap_err("Failed to create transport map")?;
+        write(self.config_dir.join("transport"), "* smtp:127.0.0.1:2525\n")
+            .await
+            .into_diagnostic()
+            .wrap_err("Failed to create transport map")?;
 
         let cmd = Command::new("postmap")
             .args(["-c", &self.config_dir.display().to_string(), "./transport"])
@@ -223,6 +218,44 @@ impl PostfixInstance {
 
         Ok(())
     }
+
+    pub async fn get_mail_content(&self, response: &Response) -> Result<String> {
+        let id = response_to_id(response)?;
+
+        let message_file = self.active_or_defered(id)?;
+
+        let content = Command::new("postcat")
+            .arg(message_file.display().to_string())
+            .output()
+            .await
+            .into_diagnostic()
+            .wrap_err("Failed postcat-ing message file")?
+            .stdout;
+        let content = String::from_utf8_lossy(&content).to_string();
+
+        Ok(content)
+    }
+
+    fn active_or_defered(&self, id: &str) -> Result<PathBuf> {
+        for typ in ["active", "deferred"] {
+            let current_dir = self.spool_dir.join(typ);
+            for entry in WalkDir::new(current_dir)
+                .into_iter()
+                .filter_map(Result::ok)
+                .filter(|e| e.metadata().unwrap().is_file())
+            {
+                let path = entry.path();
+
+                if let Some(name) = path.file_name() {
+                    if name.to_string_lossy() == id {
+                        return Ok(path.to_path_buf());
+                    }
+                }
+            }
+        }
+
+        Err(miette!("The message was not active or deferred by postfix"))
+    }
 }
 
 async fn create_and_own(path: impl AsRef<Path>, pid: u32, gid: u32) -> Result<()> {
@@ -239,17 +272,47 @@ async fn create_and_own(path: impl AsRef<Path>, pid: u32, gid: u32) -> Result<()
 }
 
 async fn status(cmd: &str, args: &[&str]) -> Result<()> {
-    let cmd = Command::new(cmd)
+    let output = Command::new(cmd)
         .args(args)
-        .status()
+        .output()
         .await
         .into_diagnostic()?;
 
-    if !cmd.success() {
-        return Err(miette!("{} failed with {}", cmd, args.join(" ")));
+    if !output.status.success() {
+        return Err(miette!(
+            "'{} {}' returned {}:\nStderr:\n{}Stdout:\n{}",
+            cmd,
+            args.join(" "),
+            output.status,
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
+        ));
     }
 
     Ok(())
+}
+
+fn response_to_id(response: &Response) -> Result<&str> {
+    if !response.is_positive() {
+        return Err(miette!(
+            help = "Only mails which where succesfully sent can be content checked",
+            "Provided response was not positive"
+        ));
+    }
+
+    let id = response
+        .first_line()
+        .ok_or(miette!(
+            "The provided response did not contain id information"
+        ))?
+        .split_ascii_whitespace()
+        .last()
+        .ok_or(miette!(
+            "The provided response did not contain a postfix id"
+        ))?;
+    println!("Postifx id: {id}");
+
+    Ok(id)
 }
 
 // #[tokio::test]

@@ -13,12 +13,6 @@ RUN cargo binstall --target x86_64-unknown-linux-musl \
 RUN apt-get update \
  && apt-get install -y postfix swaks vim
 
-# Setup postfix
-COPY ./server/tests/postfix/config /etc/postfix
-RUN echo "localhost" > /etc/mailname \
- && chmod 644 /etc/postfix/*
-
-
 FROM chef AS planner
 
 COPY . .
@@ -30,3 +24,9 @@ COPY --from=planner /workspace/recipe.json recipe.json
 
 RUN cargo chef cook --recipe-path recipe.json --tests
 COPY . .
+
+# Setup postfix
+COPY ./server/tests/postfix/config /etc/postfix
+RUN echo "localhost" > /etc/mailname \
+ && chmod 644 /etc/postfix/*
+

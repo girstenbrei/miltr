@@ -8,11 +8,11 @@ use lettre::{
     message::header::ContentType, transport::smtp::response::Response, AsyncSmtpTransport,
     AsyncTransport, Message, Tokio1Executor,
 };
-use miette::{miette, Context, IntoDiagnostic, Result};
+use miette::{miette, Context, Result};
 use miltr_server::Milter;
-use tokio::{fs, net::TcpListener, time::sleep};
+use tokio::{net::TcpListener, time::sleep};
 
-use crate::utils::{run_milter, PostfixInstance, SmtpSink};
+use crate::utils::{run_milter, PostfixInstance};
 
 /// Naive limit on sending mails
 ///
@@ -26,7 +26,6 @@ pub struct StoppedState;
 
 pub struct TestCase<S> {
     postfix: PostfixInstance,
-    smtp_sink: SmtpSink,
     state: PhantomData<S>,
 }
 
@@ -43,16 +42,12 @@ impl TestCase<RunningState> {
         let local_addr = listener.local_addr().expect("Failed to read local addr");
         run_milter(listener, milter).await;
 
-        let smtp_sink = SmtpSink::setup(name)
-            .await
-            .wrap_err("Failed smtp sink setup")?;
-        let postfix = PostfixInstance::setup(name, local_addr, smtp_sink.port)
+        let postfix = PostfixInstance::setup(name, local_addr)
             .await
             .wrap_err("Failed setting up postfix")?;
 
         Ok(Self {
             postfix,
-            smtp_sink,
             state: PhantomData,
         })
     }
@@ -99,13 +94,11 @@ impl TestCase<RunningState> {
         }
     }
 
-    pub async fn stop(mut self) -> Result<TestCase<StoppedState>> {
+    pub async fn stop(self) -> Result<TestCase<StoppedState>> {
         self.postfix.stop().await?;
-        self.smtp_sink.kill().await?;
 
         Ok(TestCase {
             postfix: self.postfix,
-            smtp_sink: self.smtp_sink,
             state: PhantomData,
         })
     }
@@ -116,17 +109,8 @@ impl TestCase<StoppedState> {
         self.postfix.log_file_content().await
     }
 
-    pub async fn validate_mail(&self, needle: &str) -> Result<String> {
-        let changed_file = self
-            .smtp_sink
-            .wait_for_file()
-            .await
-            .wrap_err("Failed watching files")?;
-
-        let content = fs::read_to_string(changed_file.as_path())
-            .await
-            .into_diagnostic()
-            .wrap_err("Could not read mail output file")?;
+    pub async fn validate_mail(&self, needle: &str, response: &Response) -> Result<String> {
+        let content = self.postfix.get_mail_content(response).await?;
 
         if content.contains(needle) {
             Ok(content)

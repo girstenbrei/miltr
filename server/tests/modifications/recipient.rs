@@ -36,11 +36,11 @@ async fn test_add_rcpt() {
         .await
         .expect("Failed setting up test case");
 
-    testcase.send_mail().await.expect("Failed sending mail");
+    let response = testcase.send_mail().await.expect("Failed sending mail");
     let testcase = testcase.stop().await.expect("Failed to shut down postfix");
 
     testcase
-        .validate_mail("X-Rcpt-Args: <add_rcpt-added@blackhole.com>")
+        .validate_mail("recipient: add_rcpt-added@blackhole.com", &response)
         .await
         .expect("Received mail did not contain added recipient");
 }
@@ -69,12 +69,12 @@ async fn test_delete_rcpt() {
         .await
         .expect("Failed setting up test case");
 
-    testcase.send_mail().await.expect("Failed sending mail");
+    let response = testcase.send_mail().await.expect("Failed sending mail");
     let testcase = testcase.stop().await.expect("Failed to shut down postfix");
 
     // Dont send mail to test.local-1@blackhole.com -> X-Rcpt-Args: <test.local-1@blackhole.com> will not be found -> validate_mail will return Error
     testcase
-        .validate_mail("X-Rcpt-Args: <delete_rcpt@blackhole.com>")
+        .validate_mail("X-Rcpt-Args: <delete_rcpt@blackhole.com>", &response)
         .await
         .expect_err("Deleting the recipient did not delete the mails");
 }

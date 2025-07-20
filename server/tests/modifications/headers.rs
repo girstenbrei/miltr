@@ -37,11 +37,11 @@ async fn test_add_header() {
         .await
         .expect("Failed setting up test case");
 
-    testcase.send_mail().await.expect("Failed sending mail");
+    let response = testcase.send_mail().await.expect("Failed sending mail");
     let testcase = testcase.stop().await.expect("Failed to shut down postfix");
 
     testcase
-        .validate_mail("Test Add Header: Add Header Value")
+        .validate_mail("Test Add Header: Add Header Value", &response)
         .await
         .expect("Did not find added header in received mail");
 }
@@ -73,11 +73,11 @@ async fn test_change_header() {
         .await
         .expect("Failed setting up test case");
 
-    testcase.send_mail().await.expect("Failed sending mail");
+    let response = testcase.send_mail().await.expect("Failed sending mail");
     let testcase = testcase.stop().await.expect("Failed to shut down postfix");
 
     testcase
-        .validate_mail("Subject: Change Header Value")
+        .validate_mail("Subject: Change Header Value", &response)
         .await
         .expect("Did not find changed header in received mail");
 }
@@ -109,11 +109,11 @@ async fn test_insert_header() {
         .await
         .expect("Failed setting up test case");
 
-    testcase.send_mail().await.expect("Failed sending mail");
+    let response = testcase.send_mail().await.expect("Failed sending mail");
     let testcase = testcase.stop().await.expect("Failed to shut down postfix");
 
     testcase
-        .validate_mail("Insert Header: Insert Header Value")
+        .validate_mail("Insert Header: Insert Header Value", &response)
         .await
         .expect("DId not find inserted header in received mail");
 }
