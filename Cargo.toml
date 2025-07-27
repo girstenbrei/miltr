@@ -19,3 +19,6 @@ miltr-server = { path = "server" }
 async-trait = "0.1.85"
 miette = { version = "7.4.0", features = ["fancy"] }
 nix = { version = "0.29.0", features = ["signal"] }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }

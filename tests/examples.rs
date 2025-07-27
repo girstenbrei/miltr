@@ -3,6 +3,7 @@ use miette::{miette, Context, IntoDiagnostic, Result};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
 
+#[cfg(not(tarpaulin_include))]
 fn build_artifacts() -> Result<(CargoRun, CargoRun)> {
     println!("Building the server");
     let server = escargot::CargoBuild::new()
