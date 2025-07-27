@@ -1,6 +1,6 @@
 services:
   test:
-    command: cargo tarpaulin --all --all-features --workspace --timeout 120 --out xml
+    command: cargo tarpaulin --all --all-features --workspace --timeout 120 --out xml --skip-clean -- --test-threads=2
     security_opt:
       - seccomp:unconfined
     build:

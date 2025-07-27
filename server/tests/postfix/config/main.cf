@@ -1,15 +1,5 @@
-# See /usr/share/postfix/main.cf.dist for a commented, more complete version
-
-# Debian specific:  Specifying a file name will cause the first
-# line of that file to be used as the name.  The Debian default
-# is /etc/mailname.
-#myorigin = /etc/mailname
-
-smtpd_banner = $myhostname ESMTP Managed E-Mail Services (RMX3)
+smtpd_banner = $myhostname ESMTP Managed E-Mail Services
 biff = no
-
-# Uncomment the next line to generate "delayed mail" warnings
-delay_warning_time = 4h
 
 smtp_mx_address_limit = 15
 
@@ -26,33 +16,15 @@ minimal_backoff_time = 1m
 
 readme_directory = no
 enable_long_queue_ids = yes
+
 # TLS parameters
 smtp_use_tls=no
-smtpd_use_tls=yes
-smtpd_tls_received_header=yes
+smtpd_use_tls=no
+smtpd_tls_received_header=no
 # Opportunistic TLS = may #### Enforce = encrypt 
 smtp_tls_security_level=may
 # Opportunistic TLS = may #### Enforce = encrypt 
 smtpd_tls_security_level=may
-
-#smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
-#smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
-
-# smtp_tls_CApath = /etc/ssl/certs
-# smtpd_tls_CApath = /etc/ssl/certs
-
-# smtpd_tls_cert_file=/etc/postfix/certs/newcert.pem
-# smtpd_tls_key_file=/etc/postfix/certs/newkey.pem
-
-# smtp_tls_cert_file=/etc/postfix/certs/newcert.pem
-# smtp_tls_key_file=/etc/postfix/certs/newkey.pem
-
-# smtp_tls_CAfile = /etc/postfix/certs/cacert.pem
-# smtpd_tls_CAfile = /etc/postfix/certs/cacert.pem
-# smtpd_tls_dh1024_param_file = /etc/ssl/private/dhparams.pem
-
-# See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
-# information on enabling SSL in the smtp client.
 
 myhostname = localhost
 myorigin = /etc/mailname
@@ -63,9 +35,6 @@ inet_protocols = ipv4
 mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.29.0.0/16
 #recipient_delimiter = +
 inet_interfaces =  all
-##########################################
-# defaults:
-##########################################
 smtp_address_preference = any
 
 alias_maps = hash:/etc/aliases
@@ -77,30 +46,21 @@ smtpd_client_restrictions =
 smtpd_helo_required = no
 smtpd_helo_restrictions =
 
-#smtpd_sasl_auth_enable = yes 
-#smtpd_sasl_application_name = smtpd
-
 smtpd_recipient_restrictions =        permit_mynetworks
         #check_client_access hash:/etc/postfix/access
         #permit_sasl_authenticated
         reject_unauth_destination
-
-
-
-#debug_peer_level = 1
-#debug_peer_list = 127.0.0.1
 
 qmqpd_client_port_logging = yes
 smtp_tls_loglevel = 1
 smtpd_client_port_logging = yes
 smtpd_tls_loglevel = 1
 
-# wie bei sendmail 256 mb:
 message_size_limit = 256000000
 mailbox_size_limit = 0
 
 smtpd_delay_open_until_valid_rcpt = no
-# minus adressen erlauben:
+
 allow_min_user = yes
 allow_percent_hack = no
 
@@ -112,22 +72,14 @@ default_process_limit = 2000
 smtpd_client_connection_count_limit = 1000
 smtp_destination_concurrency_limit = 100
 default_destination_concurrency_limit = 80
-#slow_destination_recipient_limit = 20
-#slow_destination_concurrency_limit = 2
-#m4aslow_destination_concurrency_limit = 3
 
-#ultraslow_destination_recipient_limit = 1
-#ultraslow_destination_concurrency_limit = 1
-
-#INPUT_MAIL_FILTER(`KdInMilter',  `S=inet:26001@127.0.0.1, F=T, T=C:10m;E:10m;R:10m;S:10m')dnl
-#INPUT_MAIL_FILTER(`DcMilter',   `S=inet:26005@127.0.0.1, F=T, T=C:10m;E:10m;R:10m;S:10m')dnl
 # milters:
 smtpd_milters = inet:127.0.0.1:8080
-milter_command_timeout = 50s
-milter_connect_timeout = 50s
-milter_content_timeout = 50s
-#you may need to configure the Milter protocol version that Postfix should use. 
-#The default version is 6 (before Postfix 2.6 the default version is 2)
+milter_command_timeout = 2s
+milter_connect_timeout = 2s
+milter_content_timeout = 2s
+# you may need to configure the Milter protocol version that Postfix should use. 
+# The default version is 6 (before Postfix 2.6 the default version is 2)
 milter_protocol = 6
 
 # milter_connect_macros = j {daemon_name} {daemon_addr} v {client_addr} {client_name}
@@ -135,14 +87,10 @@ milter_protocol = 6
 # mail splitting erst bei 250 rcpts: (50 = default)
 default_destination_recipient_limit = 250
 
-# wg. security so kann keiner adressen checken ohne dirfilter
-disable_vrfy_command = yes
-
 smtpd_relay_restrictions =  permit_mynetworks reject_unauth_destination 
-#smtpd_sender_restrictions = reject_unknown_sender_domain
-#local_header_rewrite_clients = static:all
 
 maillog_file = /var/log/mail.log
 
-#save all received mail in a file
-always_bcc = root@localhost
+relay_domains = test.local
+compatibility_level = 3.6
+smtp_connect_timeout = 1s
