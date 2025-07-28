@@ -1,5 +1,7 @@
 //! A simple example milter client
 
+use std::env;
+
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
@@ -19,7 +21,8 @@ async fn main() -> Result<()> {
         .with(EnvFilter::from_default_env())
         .init();
 
-    let mut stream = TcpStream::connect("localhost:8080")
+    let addr = env::var("CONNECT_ADDR").unwrap_or("127.0.0.1:8080".to_string());
+    let mut stream = TcpStream::connect(&addr)
         .await
         .expect("Failed connecting to milter server")
         .compat();
