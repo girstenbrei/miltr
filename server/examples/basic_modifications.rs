@@ -53,9 +53,9 @@ impl Milter for ModMilter {
         Ok(builder.build(Replycode::new([1, 2, 3], [4, 5, 6], "What a message!")))
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
+    async fn abort(&mut self) -> Result<(), Self::Error> {
         println!("\n======== ABORT ========");
-        Ok(Continue.into())
+        Ok(())
     }
 }
 

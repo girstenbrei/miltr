@@ -30,8 +30,8 @@ impl Milter for PrintRcptMilter {
     /// Abort has to be implemented. It is called at least once per mail
     /// handling an can occur at any time during the milter conversation.
     /// As this milter does not have any state, nothing has to be cleared.
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 ```

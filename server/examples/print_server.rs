@@ -91,9 +91,9 @@ impl Milter for PrintMilter {
         Ok(ModificationResponse::empty_continue())
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
+    async fn abort(&mut self) -> Result<(), Self::Error> {
         println!("\n======== ABORT ========");
-        Ok(Continue.into())
+        Ok(())
     }
 
     async fn quit(&mut self) -> Result<(), Self::Error> {

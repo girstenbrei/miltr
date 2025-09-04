@@ -164,13 +164,12 @@ impl<'m, M: Milter> Server<'m, M> {
                 }
                 // Abort the current smtp session handling
                 ClientCommand::Abort(_v) => {
-                    let response = self.milter.abort().await.map_err(Error::from_app_error)?;
+                    self.milter.abort().await.map_err(Error::from_app_error)?;
 
                     if self.quit_on_abort {
                         self.milter.quit().await.map_err(Error::from_app_error)?;
                         return Ok(());
                     }
-                    framed.send(&response.into()).await?;
                 }
                 // Quit this connection
                 ClientCommand::Quit(_v) => {

@@ -14,8 +14,8 @@ struct DecodingMilter;
 #[async_trait]
 impl Milter for DecodingMilter {
     type Error = &'static str;
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 

@@ -63,7 +63,7 @@ impl Milter for PrintBodyMilter {
 
     /// Receiving an abort denotes the point in time we will have the most
     /// body parts. The client must not send more afterwards.
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
+    async fn abort(&mut self) -> Result<(), Self::Error> {
         println!("\n======== ABORT ========");
 
         println!("Captured body:");
@@ -77,7 +77,7 @@ impl Milter for PrintBodyMilter {
         //
         self.body_parts.truncate(0);
 
-        Ok(Continue.into())
+        Ok(())
     }
 }
 

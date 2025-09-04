@@ -10,7 +10,7 @@ use std::{
 use async_trait::async_trait;
 use miette::{miette, Result};
 use miltr_common::{
-    actions::{Action, Continue},
+    actions::Action,
     modifications::ModificationResponse,
 };
 use miltr_server::{Milter, Server};
@@ -49,8 +49,8 @@ impl Milter for ActionMilter {
         Ok(ModificationResponse::builder().build(self.0.action.clone()))
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 
