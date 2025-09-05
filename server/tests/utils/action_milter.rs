@@ -9,10 +9,7 @@ use std::{
 
 use async_trait::async_trait;
 use miette::{miette, Result};
-use miltr_common::{
-    actions::Action,
-    modifications::ModificationResponse,
-};
+use miltr_common::{actions::Action, modifications::ModificationResponse};
 use miltr_server::{Milter, Server};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::compat::TokioAsyncReadCompatExt;

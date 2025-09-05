@@ -1,11 +1,9 @@
 use crate::utils::TestCase;
 use async_trait::async_trait;
 use miette::Error as ErrReport;
-use miltr_common::{
-    modifications::{
-        recipients::{AddRecipient, DeleteRecipient},
-        ModificationResponse,
-    },
+use miltr_common::modifications::{
+    recipients::{AddRecipient, DeleteRecipient},
+    ModificationResponse,
 };
 use miltr_server::Milter;
 
