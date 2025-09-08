@@ -1,16 +1,20 @@
+use std::future::Future;
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
     time::Duration,
 };
 
+use lettre::transport::smtp::client::AsyncSmtpConnection;
+use lettre::transport::smtp::extension::ClientId;
 use lettre::{
     message::header::ContentType, transport::smtp::response::Response, AsyncSmtpTransport,
     AsyncTransport, Message, Tokio1Executor,
 };
 use miette::{miette, Context, Result};
-use miltr_server::Milter;
 use tokio::{net::TcpListener, time::sleep};
+
+use miltr_server::Milter;
 
 use crate::utils::{run_milter, PostfixInstance};
 
@@ -50,6 +54,29 @@ impl TestCase<RunningState> {
             postfix,
             state: PhantomData,
         })
+    }
+
+    pub async fn with_smtp_connection<F, Fut, R>(
+        &mut self,
+        f: F,
+        helo_name: Option<ClientId>,
+        timeout: Option<Duration>,
+    ) -> R
+    where
+        F: FnOnce(AsyncSmtpConnection) -> Fut,
+        Fut: Future<Output = R> + Send,
+    {
+        let client = helo_name.unwrap_or_default();
+        let connection = AsyncSmtpConnection::connect_tokio1(
+            ("localhost", self.postfix.port()),
+            timeout,
+            &client,
+            None,
+            None,
+        )
+        .await
+        .expect("Failed to connect to postfix");
+        f(connection).await
     }
 
     pub async fn send_mail(&self) -> Result<Response, lettre::transport::smtp::Error> {
