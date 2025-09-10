@@ -1,15 +1,14 @@
-use std::future::Future;
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
+    sync::{Arc, RwLock},
     time::Duration,
 };
 
-use lettre::transport::smtp::client::AsyncSmtpConnection;
-use lettre::transport::smtp::extension::ClientId;
 use lettre::{
-    message::header::ContentType, transport::smtp::response::Response, AsyncSmtpTransport,
-    AsyncTransport, Message, Tokio1Executor,
+    message::header::ContentType,
+    transport::smtp::{client::AsyncSmtpConnection, extension::ClientId, response::Response},
+    Message,
 };
 use miette::{miette, Context, Result};
 use tokio::{net::TcpListener, time::sleep};
@@ -24,13 +23,51 @@ use crate::utils::{run_milter, PostfixInstance};
 /// milter did not run in parallel but in sequence in the async machinery. Now
 /// it seems to be fixed, I leave this here if we need it in the future again.
 const MAX_SEND_RETRIES: u64 = 1;
+const SMTP_CONNECTION_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct RunningState;
 pub struct StoppedState;
 
+#[derive(Default, Clone)]
+pub struct ConnectCounter {
+    inner: Arc<RwLock<usize>>,
+}
+
+impl ConnectCounter {
+    pub fn get(&self) -> usize {
+        *self.inner.read().unwrap()
+    }
+
+    pub fn inc(&self) {
+        let mut a = self.inner.write().unwrap();
+        *a = a.checked_add(1).unwrap();
+    }
+}
+
 pub struct TestCase<S> {
     postfix: PostfixInstance,
     state: PhantomData<S>,
+    connect_count: ConnectCounter,
+}
+
+impl<S> TestCase<S> {
+    pub fn milter_connections_count(&self) -> usize {
+        self.connect_count.get()
+    }
+
+    pub async fn create_smtp_transport(&self) -> AsyncSmtpConnection {
+        // Open a remote connection to the SMTP relay server
+        let client = ClientId::default();
+        AsyncSmtpConnection::connect_tokio1(
+            ("localhost", self.postfix.port()),
+            Some(SMTP_CONNECTION_TIMEOUT),
+            &client,
+            None,
+            None,
+        )
+        .await
+        .expect("Failed to bind to postfix addr")
+    }
 }
 
 impl TestCase<RunningState> {
@@ -44,7 +81,8 @@ impl TestCase<RunningState> {
             .await
             .expect("Failed to bind to addr");
         let local_addr = listener.local_addr().expect("Failed to read local addr");
-        run_milter(listener, milter).await;
+        let connect_count = ConnectCounter::default();
+        run_milter(listener, milter, connect_count.clone()).await;
 
         let postfix = PostfixInstance::setup(name, local_addr)
             .await
@@ -53,34 +91,15 @@ impl TestCase<RunningState> {
         Ok(Self {
             postfix,
             state: PhantomData,
+            connect_count,
         })
     }
 
-    pub async fn with_smtp_connection<F, Fut, R>(
-        &mut self,
-        f: F,
-        helo_name: Option<ClientId>,
-        timeout: Option<Duration>,
-    ) -> R
-    where
-        F: FnOnce(AsyncSmtpConnection) -> Fut,
-        Fut: Future<Output = R> + Send,
-    {
-        let client = helo_name.unwrap_or_default();
-        let connection = AsyncSmtpConnection::connect_tokio1(
-            ("localhost", self.postfix.port()),
-            timeout,
-            &client,
-            None,
-            None,
-        )
-        .await
-        .expect("Failed to connect to postfix");
-        f(connection).await
-    }
-
-    pub async fn send_mail(&self) -> Result<Response, lettre::transport::smtp::Error> {
-        // Send a mail through postfix
+    pub async fn send_mail_with_transport(
+        &self,
+        transport: &mut AsyncSmtpConnection,
+    ) -> Result<Response, lettre::transport::smtp::Error> {
+        // Send a mail through postfix with existing smtp connection
         let email = Message::builder()
             .from(
                 "NoBody <nobody@domain.tld>"
@@ -94,12 +113,10 @@ impl TestCase<RunningState> {
             .header(ContentType::TEXT_PLAIN)
             .body(String::from("Be happy!"))
             .expect("Failed mail building");
+        let envelope = email.envelope();
+        let raw = email.formatted();
 
-        // Open a remote connection to the SMTP relay server
         println!("Sending mail to port {}", self.postfix.port());
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous("localhost")
-            .port(self.postfix.port())
-            .build();
 
         // We retry the send here as there is enough networking involved for this
         // send to fail spuriously. Either postfix is not ready yet or the backend
@@ -108,10 +125,10 @@ impl TestCase<RunningState> {
         loop {
             // Send the email
             println!("\tAttemtp '{}' sending mail", retry_counter + 1);
-            match mailer.send(email.clone()).await {
+            match transport.send(envelope, &raw).await {
                 Ok(v) => return Ok(v),
                 Err(e) => {
-                    if retry_counter >= MAX_SEND_RETRIES {
+                    if retry_counter >= MAX_SEND_RETRIES || transport.has_broken() {
                         return Err(e);
                     }
                     sleep(Duration::from_millis(retry_counter * 500)).await;
@@ -121,12 +138,19 @@ impl TestCase<RunningState> {
         }
     }
 
+    pub async fn send_mail(&self) -> Result<Response, lettre::transport::smtp::Error> {
+        let mut transport = self.create_smtp_transport().await;
+        let result = self.send_mail_with_transport(&mut transport).await;
+        result
+    }
+
     pub async fn stop(self) -> Result<TestCase<StoppedState>> {
         self.postfix.stop().await?;
 
         Ok(TestCase {
             postfix: self.postfix,
             state: PhantomData,
+            connect_count: self.connect_count,
         })
     }
 }

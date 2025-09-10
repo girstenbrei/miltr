@@ -4,6 +4,6 @@
 //! structure as the `common` crate.
 
 mod actions;
-mod integration;
+mod connection;
 mod modifications;
 mod utils;
