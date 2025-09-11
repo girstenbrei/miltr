@@ -66,7 +66,7 @@ impl Milter for AddHeaderTestMilter {
 }
 
 #[tokio::test]
-async fn many_mail_send_test() -> Result<()> {
+async fn test_many_mail_send() -> Result<()> {
     let milter = AddHeaderTestMilter::new();
     let testcase = TestCase::setup("many-mail-send", milter.clone()).await?;
     let mut transport = testcase.create_smtp_transport().await;
