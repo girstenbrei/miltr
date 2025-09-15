@@ -1,14 +1,9 @@
 use std::sync::atomic::AtomicUsize;
 use std::sync::{atomic, Arc};
-use std::time::Duration;
 
 use async_trait::async_trait;
 use miette::{ErrReport, Result};
-use tokio::time::sleep;
 
-use miltr_common::actions::Action;
-use miltr_common::actions::Continue;
-use miltr_common::commands::Mail;
 use miltr_common::modifications::headers::AddHeader;
 use miltr_common::modifications::ModificationResponse;
 use miltr_server::Milter;
@@ -16,7 +11,6 @@ use miltr_server::Milter;
 use crate::utils::TestCase;
 
 const MAILS_COUNT: usize = 5;
-const MAIL_COMMAND_SLEEP_DURATION: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Clone)]
 struct AddHeaderTestMilter {
@@ -40,15 +34,6 @@ impl AddHeaderTestMilter {
 #[async_trait]
 impl Milter for AddHeaderTestMilter {
     type Error = ErrReport;
-
-    async fn mail(&mut self, _mail: Mail) -> std::result::Result<Action, Self::Error> {
-        // This wait is necessary to reproduce the milter protocol violation issues
-        // with the postfix state machine.
-        // It seems that if `Mail` handler response is delayed - postfix starts processing
-        // the response of the previous EOB, and throws an error.
-        sleep(MAIL_COMMAND_SLEEP_DURATION).await;
-        Ok(Continue.into())
-    }
 
     async fn end_of_body(&mut self) -> std::result::Result<ModificationResponse, Self::Error> {
         self.end_of_body_called
