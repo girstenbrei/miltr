@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/girstenbrei/miltr/compare/miltr-client-v0.1.2...miltr-client-v0.1.3) - 2025-09-19
+
+### Fixed
+
+- failing client_v_server test ([#20](https://github.com/girstenbrei/miltr/pull/20))
+
+### Other
+
+- Upgrade dependencies ([#21](https://github.com/girstenbrei/miltr/pull/21))
+- Add tarpaulin run to ci ([#15](https://github.com/girstenbrei/miltr/pull/15))
+
 ## [0.1.2](https://github.com/girstenbrei/miltr/compare/miltr-client-v0.1.1...miltr-client-v0.1.2) - 2025-05-23
 
 ### Other
