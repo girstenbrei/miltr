@@ -11,12 +11,12 @@ members = ["server", "client", "common", "utils"]
 resolver = "2"
 
 [dev-dependencies]
-escargot = "0.5.14"
+escargot = "0.5.15"
 miltr-common = { path = "common" }
 miltr-server = { path = "server" }
 
 [dependencies]
-async-trait = "0.1.88"
+async-trait = "0.1.89"
 miette = { version = "7.6.0", features = ["fancy"] }
 nix = { version = "0.30.1", features = ["signal"] }
 
