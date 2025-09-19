@@ -1,10 +1,7 @@
 use crate::utils::TestCase;
 use async_trait::async_trait;
 use miette::Error as ErrReport;
-use miltr_common::{
-    actions::{Action, Continue},
-    modifications::{body::ReplaceBody, ModificationResponse},
-};
+use miltr_common::modifications::{body::ReplaceBody, ModificationResponse};
 use miltr_server::Milter;
 
 #[derive(Debug, Clone)]
@@ -20,8 +17,8 @@ impl Milter for ReplaceBodyTestMilter {
         Ok(response)
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 

@@ -2,7 +2,6 @@ use crate::utils::TestCase;
 use async_trait::async_trait;
 use miette::{Error as ErrReport, Result};
 use miltr_common::{
-    actions::{Action, Continue},
     commands::Macro,
     optneg::{MacroStage, OptNeg},
 };
@@ -49,8 +48,8 @@ impl Milter for MacroRequestTestMilter {
         Ok(())
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 
@@ -58,10 +57,10 @@ const RECV_MACROS_MAX: usize = 17;
 
 /// Test Macro Request.
 /// Test example:
-/// Default macros for Connect MacroStage : "j","{client_addr}","{client_connections}", "{client_name}", "{client_port}", "{client_ptr}", "{daemon_addr}", "{daemon_name}", "{daemon_port}", "v" .
-/// But we will only send "j","{client_addr}","{client_connections}" in Connect MacroStage (more details in optneg.rs) .
+/// Default macros for Connect `MacroStage` : "`j","{client_addr}","{client_connections`}", "{`client_name`}", "{`client_port`}", "{`client_ptr`}", "{`daemon_addr`}", "{`daemon_name`}", "{`daemon_port`}", "v" .
+/// But we will only send "`j","{client_addr}","{client_connections`}" in Connect `MacroStage` (more details in optneg.rs) .
 /// If Milter and Postfix work, we will receive:
-///Macro { code: b'C', body: b"j\x00localhost\x00{client_addr}\x00127.0.0.1\x00{client_connections}\x000\x00}
+///Macro { code: b'C', body: `b"j\x00localhost\x00{client_addr}\x00127.0.0.1\x00{client_connections}\x000\x00`}
 #[tokio::test]
 async fn test_macro_request() {
     let (tx, mut rx) = mpsc::channel(RECV_MACROS_MAX);

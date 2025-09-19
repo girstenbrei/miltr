@@ -1,4 +1,6 @@
 //! Test utils to run a single action during a milter session.
+use async_trait::async_trait;
+use miette::{miette, Result};
 use std::{
     fmt::{Debug, Display},
     sync::{
@@ -6,16 +8,11 @@ use std::{
         Arc,
     },
 };
-
-use async_trait::async_trait;
-use miette::{miette, Result};
-use miltr_common::{
-    actions::{Action, Continue},
-    modifications::ModificationResponse,
-};
-use miltr_server::{Milter, Server};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::compat::TokioAsyncReadCompatExt;
+
+use miltr_common::{actions::Action, modifications::ModificationResponse};
+use miltr_server::{Milter, Server};
 
 /// A milter performing a single action on `end_of_body`.
 #[derive(Clone)]
@@ -30,7 +27,7 @@ impl ActionMilter {
     pub fn new(action: impl Into<Action>) -> Self {
         Self(Arc::new(ActionMilterInner {
             action: action.into(),
-            action_called: AtomicUsize::new(0),
+            action_called: AtomicUsize::default(),
         }))
     }
 
@@ -49,12 +46,12 @@ impl Milter for ActionMilter {
         Ok(ModificationResponse::builder().build(self.0.action.clone()))
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 
-pub async fn run_milter<M, E>(listener: TcpListener, milter: M)
+pub async fn run_milter<M, E>(listener: TcpListener, milter: M, connect_count: Arc<AtomicUsize>)
 where
     E: Debug + Display + 'static,
     M: Milter<Error = E> + 'static + Clone,
@@ -73,6 +70,7 @@ where
                 continue;
             };
             let inner_milter = milter.clone();
+            connect_count.fetch_add(1, Ordering::SeqCst);
             tokio::spawn(async move { handle_connection(stream, inner_milter).await });
         }
     });

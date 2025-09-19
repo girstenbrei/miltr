@@ -1,12 +1,9 @@
 use crate::utils::TestCase;
 use async_trait::async_trait;
 use miette::Error as ErrReport;
-use miltr_common::{
-    actions::{Action, Continue},
-    modifications::{
-        recipients::{AddRecipient, DeleteRecipient},
-        ModificationResponse,
-    },
+use miltr_common::modifications::{
+    recipients::{AddRecipient, DeleteRecipient},
+    ModificationResponse,
 };
 use miltr_server::Milter;
 
@@ -26,8 +23,8 @@ impl Milter for AddRcptTestMilter {
         Ok(response)
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 #[tokio::test]
@@ -59,8 +56,8 @@ impl Milter for DeleteRcptTestMilter {
         Ok(response)
     }
 
-    async fn abort(&mut self) -> Result<Action, Self::Error> {
-        Ok(Continue.into())
+    async fn abort(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 #[tokio::test]

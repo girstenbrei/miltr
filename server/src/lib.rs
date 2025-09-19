@@ -43,9 +43,6 @@ impl<'m, M: Milter> Server<'m, M> {
 
     /// Create a server with defaults working with postfix.
     ///
-    /// The main difference is treating the call to `abort` like a call to
-    /// `quit`. See [this comment][c] as a source in the postfix docs
-    ///
     /// AFAIK, originally there where three use cases individual methods:
     /// 1. Abort
     ///
@@ -68,7 +65,7 @@ impl<'m, M: Milter> Server<'m, M> {
     /// [c]: https://github.com/vdukhovni/postfix/blob/17dbfb9b8b9b483a23ea84dcd272c6d4010ad74b/postfix/src/milter/milter8.c#L387-L392
     #[must_use]
     pub fn default_postfix(milter: &'m mut M) -> Self {
-        Self::new(milter, true, 2_usize.pow(16))
+        Self::new(milter, false, 2_usize.pow(16))
     }
 
     /// Handle a single milter connection.
@@ -164,13 +161,12 @@ impl<'m, M: Milter> Server<'m, M> {
                 }
                 // Abort the current smtp session handling
                 ClientCommand::Abort(_v) => {
-                    let response = self.milter.abort().await.map_err(Error::from_app_error)?;
+                    self.milter.abort().await.map_err(Error::from_app_error)?;
 
                     if self.quit_on_abort {
                         self.milter.quit().await.map_err(Error::from_app_error)?;
                         return Ok(());
                     }
-                    framed.send(&response.into()).await?;
                 }
                 // Quit this connection
                 ClientCommand::Quit(_v) => {

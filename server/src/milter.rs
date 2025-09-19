@@ -131,7 +131,7 @@ pub trait Milter: Send {
     /// See [`Server::default_postfix`](crate::Server::default_postfix).
     #[doc(alias = "SMFIC_ABORT")]
     #[doc(alias = "xxfi_abort")]
-    async fn abort(&mut self) -> Result<Action, Self::Error>;
+    async fn abort(&mut self) -> Result<(), Self::Error>;
 
     /// Called on quitting a connection from a milter client.
     ///
