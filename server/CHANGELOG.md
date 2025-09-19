@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.3](https://github.com/girstenbrei/miltr/compare/miltr-server-v0.1.2...miltr-server-v0.1.3) - 2025-09-19
+## [0.2.0](https://github.com/girstenbrei/miltr/compare/miltr-server-v0.1.2...miltr-server-v0.1.3) - 2025-09-19
+
+### Fixed
+
+- Fix protocol violation: Respond to SMFIC_ABORT with no response, not SMFIS_CONTINUE ([#22](https://github.com/girstenbrei/miltr/pull/22))
+
 
 ### Added
 
