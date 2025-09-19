@@ -8,10 +8,10 @@ edition = "2021"
 cargo-fuzz = true
 
 [dependencies]
-async-trait = "0.1.77"
+async-trait = "0.1.89"
 asynchronous-codec = "0.7.0"
-bytes = "1.5.0"
-libfuzzer-sys = "0.4"
+bytes = "1.10.1"
+libfuzzer-sys = "0.4.10"
 miltr-common = { version = "0.1.0", path = "../../common" }
 miltr-server = { version = "0.1.0", path = "..", features = ["_fuzzing"]}
 

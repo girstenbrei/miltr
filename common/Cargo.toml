@@ -18,22 +18,22 @@ tracing = ["dep:strum"]
 
 [dependencies]
 allocation-counter = { version = "0.8.1", optional = true }
-bitflags = "2.4.2"
-enum_dispatch = "0.3.12"
+bitflags = "2.9.4"
+enum_dispatch = "0.3.13"
 itertools = "0.14.0"
-num_enum = "0.7.2"
-thiserror = "2.0.11"
+num_enum = "0.7.4"
+thiserror = "2.0.16"
 asynchronous-codec = "0.7.0"
-bytes = "1.5.0"
-bytecount = "0.6.7"
+bytes = "1.10.1"
+bytecount = "0.6.9"
 miltr-utils = { version = "0.1.1", path = "../utils" }
-strum = { version = "0.26", features = ["derive"], optional = true }
+strum = { version = "0.27.2", features = ["derive"], optional = true }
 
 [dev-dependencies]
 assert_matches = "1.5.0"
-pretty_assertions = "1.4.0"
-tokio = { version = "1.36.0", features = ["full"] }
-rstest = "0.24.0"
+pretty_assertions = "1.4.1"
+tokio = { version = "1.47.1", features = ["full"] }
+rstest = "0.26.1"
 
 [lints.rust]
 unsafe_code = "forbid"
